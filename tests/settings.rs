@@ -35,7 +35,10 @@ fn add_keeps_everything_else() {
     assert_eq!(s["model"], "opus");
     assert_eq!(s["hooks"]["PreToolUse"], existing()["hooks"]["PreToolUse"]);
     assert_eq!(s["hooks"]["PermissionRequest"].as_array().unwrap().len(), 2);
-    assert_eq!(ours(&s), vec![json!({"type": "command", "command": CMD, "timeout": 120})]);
+    assert_eq!(
+        ours(&s),
+        vec![json!({"type": "command", "command": CMD, "timeout": 120})]
+    );
 }
 
 #[test]
@@ -58,7 +61,11 @@ fn remove_leaves_other_hooks_and_cleans_up_empty_keys() {
     let mut only_ours = json!({});
     add_hook(&mut only_ours, CMD, 120).unwrap();
     remove_hook(&mut only_ours);
-    assert_eq!(only_ours, json!({}), "no empty hooks/PermissionRequest left behind");
+    assert_eq!(
+        only_ours,
+        json!({}),
+        "no empty hooks/PermissionRequest left behind"
+    );
 }
 
 #[test]

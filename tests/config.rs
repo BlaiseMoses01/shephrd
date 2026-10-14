@@ -129,9 +129,15 @@ fn config_init_adds_a_missing_prompt_without_touching_the_config() {
     let path = dir.path().join("config.toml");
     std::fs::write(&path, "model = \"haiku\"\n").unwrap();
 
-    let (ok, _, stderr) = shephrd(&["config", "--init", "--config", path.to_str().unwrap()], "");
+    let (ok, _, stderr) = shephrd(
+        &["config", "--init", "--config", path.to_str().unwrap()],
+        "",
+    );
     assert!(ok, "{stderr}");
-    assert_eq!(std::fs::read_to_string(&path).unwrap(), "model = \"haiku\"\n");
+    assert_eq!(
+        std::fs::read_to_string(&path).unwrap(),
+        "model = \"haiku\"\n"
+    );
     assert!(dir.path().join(PROMPT_FILE).exists());
 }
 
@@ -167,7 +173,10 @@ fn prompt_setting_is_relative_to_the_config_file() {
     std::fs::write(&path, "prompt = \"prompts/strict.md\"\n").unwrap();
 
     let (cfg, _) = Config::load(Some(&path)).unwrap();
-    assert_eq!(cfg.prompt.as_deref(), Some(dir.path().join("prompts/strict.md").as_path()));
+    assert_eq!(
+        cfg.prompt.as_deref(),
+        Some(dir.path().join("prompts/strict.md").as_path())
+    );
     assert!(cfg.reviewer_template.starts_with("CUSTOM-PROMPT"));
 }
 
@@ -179,7 +188,10 @@ fn prompt_missing_a_placeholder_is_refused() {
     std::fs::write(dir.path().join(PROMPT_FILE), edited).unwrap();
 
     let err = format!("{:#}", Config::load(Some(&path)).unwrap_err());
-    assert!(err.contains("{{user_turns}}"), "should name the placeholder: {err}");
+    assert!(
+        err.contains("{{user_turns}}"),
+        "should name the placeholder: {err}"
+    );
 }
 
 #[test]
@@ -192,7 +204,8 @@ fn missing_prompt_file_is_an_error_not_a_silent_fallback() {
 fn decision_log_defaults_to_the_state_dir_and_resolves_relative_paths() {
     let cfg = Config::default();
     assert!(
-        cfg.decision_log_path().ends_with(".local/state/shephrd/decisions.jsonl")
+        cfg.decision_log_path()
+            .ends_with(".local/state/shephrd/decisions.jsonl")
             || std::env::var_os("XDG_STATE_HOME").is_some(),
         "{}",
         cfg.decision_log_path().display()

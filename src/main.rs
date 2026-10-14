@@ -151,7 +151,10 @@ async fn main() -> anyhow::Result<()> {
             let path = settings_path(project)?;
             match settings::disable(&path)? {
                 0 => println!("no shephrd hook in {}", path.display()),
-                n => println!("disabled: removed {n} shephrd hook(s) from {}", path.display()),
+                n => println!(
+                    "disabled: removed {n} shephrd hook(s) from {}",
+                    path.display()
+                ),
             }
         }
         Command::Status => {

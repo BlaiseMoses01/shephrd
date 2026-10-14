@@ -1,0 +1,59 @@
+name: Publish to crates.io
+
+# Runs alongside release.yml on the same version tags. Uses crates.io trusted
+# publishing: GitHub proves who we are and crates.io hands back a token that
+# lasts for this job only, so there's no long-lived API token stored anywhere.
+# One-time setup: on crates.io, add this repo and `publish-crate.yml` (with
+# environment `crates-io`) as a trusted publisher for the shephrd crate.
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write # lets crates-io-auth-action request the OIDC token
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master, 2026-10-09
+        with:
+          toolchain: stable
+
+      - name: Check the tag matches Cargo.toml
+        id: version
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "shephrd") | .version')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match Cargo.toml version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # crates.io never accepts the same version twice, so if it's already up
+      # (e.g. published by hand), skip instead of failing the run.
+      - name: Check whether this version is already published
+        id: existing
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            -A "shephrd-release (github.com/BlaiseMoses01/shephrd)" \
+            "https://crates.io/api/v1/crates/shephrd/${{ steps.version.outputs.version }}")
+          echo "published=$([ "$status" = 200 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+        if: steps.existing.outputs.published == 'false'
+        id: auth
+
+      - name: cargo publish
+        if: steps.existing.outputs.published == 'false'
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}

@@ -99,10 +99,8 @@ async fn unpinnable_cwd_is_not_judged() {
     // A cwd that doesn't exist can't be pinned, so the daemon must hand it
     // back to the user rather than run the judge somewhere arbitrary.
     let url = start_daemon().await;
-    let event = fixture("bash_gh_search.json").replace(
-        "/Users/dev/projects/demo-app",
-        "/definitely/not/here",
-    );
+    let event = fixture("bash_gh_search.json")
+        .replace("/Users/dev/projects/demo-app", "/definitely/not/here");
     let (ok, stdout) = run_hook(&url, &event, &[]).await;
     assert!(ok);
     assert_eq!(stdout, "");

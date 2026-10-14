@@ -112,7 +112,11 @@ async fn review(
     );
     // Wait for a free judge slot. `acquire` only fails if the semaphore is
     // closed, which we never do. The permit is released when it's dropped.
-    let _permit = state.judges.acquire().await.expect("semaphore never closed");
+    let _permit = state
+        .judges
+        .acquire()
+        .await
+        .expect("semaphore never closed");
     match judge_event(&event, &root, &state.config).await {
         Ok(review) => {
             eprintln!("shephrd: {:?}: {}", review.verdict, review.reason);

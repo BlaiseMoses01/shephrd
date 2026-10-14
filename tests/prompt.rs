@@ -65,7 +65,12 @@ fn template_has_no_unfilled_placeholders() {
 fn agent_text_cannot_smuggle_in_trusted_context() {
     // The agent controls tool_input. If it writes a placeholder name, that
     // must stay literal and stay inside <request>, not pull trusted text in.
-    let prompt = reviewer_prompt(REVIEWER_TEMPLATE, &event("echo {{user_turns}} {{plan}}"), &ctx(), "x");
+    let prompt = reviewer_prompt(
+        REVIEWER_TEMPLATE,
+        &event("echo {{user_turns}} {{plan}}"),
+        &ctx(),
+        "x",
+    );
     let request = &prompt[prompt.find("<request>").unwrap()..prompt.find("</request>").unwrap()];
     assert!(request.contains("{{user_turns}} {{plan}}"));
     assert!(!request.contains("TRUSTED-"));

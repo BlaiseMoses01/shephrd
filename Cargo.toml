@@ -2,12 +2,22 @@
 name = "shephrd"
 version = "0.1.0"
 edition = "2024"
-description = "An LLM reviewer for Claude Code permission requests"
+description = "Adversarial LLM reviewer for Claude Code permission requests"
 readme = "README.md"
 keywords = ["claude", "claude-code", "hooks", "security", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 license = "MIT"
 repository = "https://github.com/BlaiseMoses01/shephrd"
+homepage = "https://github.com/BlaiseMoses01/shephrd"
+# What goes into the crates.io package: just what's needed to build it.
+# `include_str!` pulls in prompts/reviewer.md and shephrd.example.toml.
+include = [
+  "/src/**",
+  "/prompts/**",
+  "/shephrd.example.toml",
+  "/README.md",
+  "/LICENSE",
+]
 
 # Library half, so integration tests in tests/ can `use shephrd::...`.
 [lib]
@@ -30,3 +40,8 @@ tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]
 tempfile = "3"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

@@ -1,0 +1,42 @@
+# cargo-deny: run in CI (`cargo deny check`). See
+# https://embarkstudios.github.io/cargo-deny/checks/cfg.html
+
+[graph]
+# Only the platforms we ship, so Windows-only dependencies don't add noise.
+targets = [
+  "aarch64-apple-darwin",
+  "x86_64-apple-darwin",
+  "aarch64-unknown-linux-gnu",
+  "x86_64-unknown-linux-gnu",
+]
+all-features = true
+
+[advisories]
+# Fail on any RustSec advisory (vulnerable, unmaintained, unsound or yanked)
+# affecting a dependency. To accept one, add its ID with a reason:
+#   ignore = [{ id = "RUSTSEC-0000-0000", reason = "why it doesn't affect us" }]
+ignore = []
+
+[licenses]
+# Licenses that are compatible with shipping shephrd under MIT.
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "BSD-3-Clause",
+  "ISC",
+  "Unicode-3.0",
+  "Zlib",
+  "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.9
+
+[bans]
+# Two versions of the same crate is common in the ecosystem; report, don't fail.
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+# Only crates.io: no git dependencies or other registries sneak in.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
