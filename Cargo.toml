@@ -1,0 +1,32 @@
+[package]
+name = "shephrd"
+version = "0.1.0"
+edition = "2024"
+description = "An LLM reviewer for Claude Code permission requests"
+readme = "README.md"
+keywords = ["claude", "claude-code", "hooks", "security", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+license = "MIT"
+repository = "https://github.com/BlaiseMoses01/shephrd"
+
+# Library half, so integration tests in tests/ can `use shephrd::...`.
+[lib]
+name = "shephrd"
+path = "src/lib.rs"
+
+[[bin]]
+name = "shephrd"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+axum = "0.8"
+clap = { version = "4.6.7", features = ["derive"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+toml = "0.8"
+tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+tempfile = "3"

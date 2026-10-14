@@ -1,0 +1,34 @@
+# shephrd config. `shephrd config --init` copies this file to
+# ~/.config/shephrd/config.toml, with the reviewer prompt next to it as
+# reviewer.md. Every setting is optional; anything you leave out uses the
+# default shown here. Restart the daemon after editing either file.
+
+# Model the judge runs as (`claude -p --model ...`). An alias like
+# "sonnet", "haiku" or "opus", or a full model ID.
+model = "sonnet"
+
+# Seconds before a judge run is killed and the request falls back to your
+# normal permission prompt. Keep it below the hook's "timeout" in
+# .claude/settings.json (120), minus ~10s of headroom for the hook itself.
+timeout_secs = 90
+
+# How many of your most recent prompts the judge sees as trusted intent.
+user_turns = 5
+
+# Port the daemon listens on (127.0.0.1 only). `shephrd hook` connects here too.
+port = 7878
+
+# How many reviews may run at once across all your Claude Code sessions.
+# Requests beyond this wait; if they wait past the hook's timeout, they fall
+# back to your normal permission prompt.
+max_concurrent = 4
+
+# Where every verdict is appended, one JSON object per line. Defaults to
+# ~/.local/state/shephrd/decisions.jsonl ($XDG_STATE_HOME if set). A relative
+# path is relative to this file's directory.
+# decision_log = "decisions.jsonl"
+
+# The reviewer prompt. Defaults to reviewer.md next to this file if it exists
+# (`shephrd config --init` writes one), else the prompt built into shephrd.
+# A relative path is relative to this file's directory.
+# prompt = "reviewer.md"
