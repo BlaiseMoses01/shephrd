@@ -1,10 +1,6 @@
 # shephrd
 
-Adversarial review agent and risk classifier for Claude Code permission requests. 
-
-shephrd is essentially just a long running daemon that takes in Claude Code `PermissionRequest` hook events. 
-
-When your claude sessions wants to run a tool that needs your approval, shephrd dispatches a readonly review agentic using `claude -p` with your configured model and an adversarial reviewer prompt, scoped within the same cwd and conversations as the working agents so the reviewer can judge intent.
+Adversarial review agent and risk classifier for Claude Code permission requests. Shephrd is essentially just a long running daemon that takes in Claude Code `PermissionRequest` hook events. 
 
 > [!WARNING]
 > shephrd and its verdicts shouldn't be trusted in isolation.
@@ -35,20 +31,57 @@ decides whether it thinks a decision is worth you taking a look.
 
 ## Install
 
-You need the [`claude` CLI](https://docs.claude.com/en/docs/claude-code) on your
-`PATH`, signed in. shephrd runs it to do each review.
+shephrd should run on macOS and Linux (x86_64 and arm64), but currently no windows support. 
 
-Prebuilt downloads aren't published yet, so for now install from source with
-[Rust](https://rustup.rs):
+### Homebrew
+
+```sh
+brew install BlaiseMoses01/tap/shephrd
+```
+
+### Cargo
+
+If you have [Rust](https://rustup.rs) installed, build it from
+[crates.io](https://crates.io/crates/shephrd):
+
+```sh
+cargo install shephrd --locked
+```
+
+### Install script
+
+Downloads the prebuilt binary for your machine from
+[GitHub Releases](https://github.com/BlaiseMoses01/shephrd/releases). No Rust needed.
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/BlaiseMoses01/shephrd/releases/latest/download/shephrd-installer.sh | sh
+```
+
+It installs `shephrd` (and `shephrd-update`, for updating) into `~/.cargo/bin`,
+and adds that to your `PATH` in your shell profile if it isn't there already.
+If you'd rather read the script before running it, download it first:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf -o shephrd-installer.sh https://github.com/BlaiseMoses01/shephrd/releases/latest/download/shephrd-installer.sh
+less shephrd-installer.sh
+sh shephrd-installer.sh
+```
+
+### Manual download
+
+Each [release](https://github.com/BlaiseMoses01/shephrd/releases) has a
+`.tar.xz` per platform with a `.sha256` checksum next to it. Unpack it and put
+`shephrd` anywhere on your `PATH`.
+
+### From source
 
 ```sh
 git clone https://github.com/BlaiseMoses01/shephrd.git
 cd shephrd
-cargo install --path .
+cargo install --path . --locked
 ```
 
-This puts a `shephrd` binary in `~/.cargo/bin`, which rustup adds to your `PATH`.
-After this you can delete the clone and run `shephrd` from any directory.
+Check it worked with `shephrd --version`.
 
 ## Quick start
 
@@ -133,12 +166,19 @@ Restart the daemon after any change.
 
 ## Updating
 
-From your clone, pull and reinstall, then restart the daemon:
+Update the same way you installed, then restart `shephrd serve`:
 
-```sh
-git pull
-cargo install --path . --force
-```
+| Installed with | Update with                                   |
+|----------------|-----------------------------------------------|
+| Homebrew       | `brew upgrade shephrd`                         |
+| Install script | `shephrd-update` (or run the install script again) |
+| Cargo          | `cargo install shephrd --locked` (reinstalls the latest) |
+| From source    | `git pull`, then `cargo install --path . --locked --force` |
+
+You don't need to run `shephrd enable` again: the hook points at the stable
+path on your `PATH` (for Homebrew, `/opt/homebrew/bin/shephrd`), not at a
+specific version. If you moved the binary somewhere else, run `shephrd enable`
+again to update the hook.
 
 Your config and prompt are left as they are. A new version can ship changes to
 the built-in prompt; if you've made your own `reviewer.md`, compare it with
@@ -148,12 +188,26 @@ the built-in prompt; if you've made your own `reviewer.md`, compare it with
 
 Do it in this order, so Claude Code isn't left pointing at a program that's gone:
 
-```sh
-# 1. Stop the daemon (Ctrl-C wherever `shephrd serve` is running)
-shephrd disable             # 2. remove the hook (add --project for any projects you enabled)
-cargo uninstall shephrd     # 3. remove the program
-rm -rf ~/.config/shephrd ~/.local/state/shephrd   # 4. optional: config, prompt and log
-```
+1. Stop the daemon (Ctrl-C wherever `shephrd serve` is running).
+2. Remove the hook. Add `--project` in any project where you used it:
+
+   ```sh
+   shephrd disable
+   ```
+
+3. Remove the program, the same way you installed it:
+
+   | Installed with | Remove with                                         |
+   |----------------|-----------------------------------------------------|
+   | Homebrew       | `brew uninstall shephrd`                             |
+   | Install script | `rm ~/.cargo/bin/shephrd ~/.cargo/bin/shephrd-update` |
+   | Cargo / source | `cargo uninstall shephrd`                            |
+
+4. Optionally, delete your config, prompt and decision log:
+
+   ```sh
+   rm -rf ~/.config/shephrd ~/.local/state/shephrd
+   ```
 
 ## Tuning the reviewer agent's prompt
 

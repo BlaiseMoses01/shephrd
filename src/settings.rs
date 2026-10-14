@@ -20,6 +20,30 @@ pub fn user_settings_path() -> PathBuf {
         .join("settings.json")
 }
 
+/// The path to write into the hook for this binary. Package managers often
+/// run a symlink to a versioned file (Homebrew: `/opt/homebrew/bin/shephrd` ->
+/// `.../Cellar/shephrd/0.1.0/bin/shephrd`), and the versioned file is deleted
+/// on upgrade. So prefer the first `shephrd` on `PATH` that is this same
+/// binary, and only fall back to the fully resolved path.
+pub fn stable_exe_path() -> anyhow::Result<PathBuf> {
+    let exe = std::env::current_exe()?.canonicalize()?;
+    let path_var = std::env::var_os("PATH").unwrap_or_default();
+    Ok(stable_path_for(&exe, std::env::split_paths(&path_var)))
+}
+
+/// `stable_exe_path` with the binary and `PATH` passed in, for tests.
+pub fn stable_path_for(exe: &Path, path_dirs: impl IntoIterator<Item = PathBuf>) -> PathBuf {
+    let Some(name) = exe.file_name() else {
+        return exe.to_path_buf();
+    };
+    path_dirs
+        .into_iter()
+        .filter(|dir| dir.is_absolute())
+        .map(|dir| dir.join(name))
+        .find(|candidate| candidate.canonicalize().is_ok_and(|real| real == exe))
+        .unwrap_or_else(|| exe.to_path_buf())
+}
+
 /// The hook command for the binary at `exe`, quoted if the path has spaces.
 pub fn hook_command(exe: &Path) -> String {
     let exe = exe.display().to_string();

@@ -138,7 +138,7 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Enable { project } => {
             let (config, _) = Config::load(explicit)?;
-            let exe = std::env::current_exe()?.canonicalize()?;
+            let exe = settings::stable_exe_path()?;
             let path = settings_path(project)?;
             let command = settings::hook_command(&exe);
             // The hook must outlast the judge, plus time for the hook itself.

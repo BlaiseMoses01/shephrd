@@ -2,8 +2,8 @@
 //! without disturbing anything else there.
 
 use serde_json::{Value, json};
-use shephrd::settings::{add_hook, disable, enable, hook_command, remove_hook};
-use std::path::Path;
+use shephrd::settings::{add_hook, disable, enable, hook_command, remove_hook, stable_path_for};
+use std::path::{Path, PathBuf};
 
 const CMD: &str = "/usr/local/bin/shephrd hook";
 
@@ -117,4 +117,38 @@ fn invalid_settings_are_left_alone() {
     std::fs::write(&path, "{ not json").unwrap();
     assert!(enable(&path, CMD, 120).is_err());
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "{ not json");
+}
+
+#[cfg(unix)]
+#[test]
+fn hook_uses_the_path_symlink_not_the_versioned_file() {
+    // Homebrew layout: bin/shephrd -> Cellar/shephrd/0.1.0/bin/shephrd.
+    let tmp = tempfile::tempdir().unwrap();
+    let real_dir = tmp.path().join("Cellar/shephrd/0.1.0/bin");
+    let bin = tmp.path().join("bin");
+    std::fs::create_dir_all(&real_dir).unwrap();
+    std::fs::create_dir_all(&bin).unwrap();
+    let real = real_dir.join("shephrd");
+    std::fs::write(&real, "").unwrap();
+    std::os::unix::fs::symlink(&real, bin.join("shephrd")).unwrap();
+    let real = real.canonicalize().unwrap();
+
+    let elsewhere = tmp.path().join("other");
+    std::fs::create_dir_all(&elsewhere).unwrap();
+    std::fs::write(elsewhere.join("shephrd"), "").unwrap(); // a different shephrd
+
+    let got = stable_path_for(&real, [elsewhere, bin.clone()]);
+    assert_eq!(got, bin.join("shephrd"));
+}
+
+#[test]
+fn falls_back_to_the_real_path_when_not_on_path() {
+    let tmp = tempfile::tempdir().unwrap();
+    let real = tmp.path().join("shephrd");
+    std::fs::write(&real, "").unwrap();
+    let real = real.canonicalize().unwrap();
+    assert_eq!(
+        stable_path_for(&real, [PathBuf::from("/nonexistent")]),
+        real
+    );
 }
